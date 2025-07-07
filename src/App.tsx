@@ -15,7 +15,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<CameraScreen />} />
           <Route path="/prompt-editor" element={<PromptEditor />} />
