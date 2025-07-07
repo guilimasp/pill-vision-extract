@@ -5,15 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera as CameraIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface MedicationData {
-  name: string;
-  activeIngredient: string;
-  dosage: string;
-  quantity: string;
-  laboratory: string;
-  stripe: string;
-}
+import { analyzeMedicationImage, MedicationData } from "@/lib/openai";
 
 const ResultsScreen = () => {
   const navigate = useNavigate();
@@ -38,21 +30,9 @@ const ResultsScreen = () => {
         throw new Error("No image found");
       }
 
-      // TODO: Replace with actual Supabase Edge Function call
-      // For now, simulate the analysis
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Mock response - replace with actual OpenAI API call
-      const mockData: MedicationData = {
-        name: "Dipirona Sódica",
-        activeIngredient: "Dipirona Sódica",
-        dosage: "500mg",
-        quantity: "20",
-        laboratory: "EMS",
-        stripe: "VL"
-      };
-
-      setMedicationData(mockData);
+      // Chamada real para a API do OpenAI
+      const medicationData = await analyzeMedicationImage(imageBase64, prompt);
+      setMedicationData(medicationData);
     } catch (error) {
       console.error("Error analyzing image:", error);
       setError("Erro de análise. Tente novamente");

@@ -1,8 +1,23 @@
-# Welcome to your Lovable project
+# Pill Vision Extract - Extrator de Informações de Medicamentos
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/ae9a53e6-2258-4595-9695-ad71d6c57c79
+
+## Configuração da API Key
+
+Este projeto utiliza a API do OpenAI para análise de imagens de medicamentos. Para funcionar corretamente, você precisa configurar sua API key:
+
+1. **Crie um arquivo `.env` na raiz do projeto** (se não existir)
+2. **Adicione sua API key do OpenAI**:
+   ```
+   VITE_OPENAI_API_KEY=sua_api_key_aqui
+   ```
+
+**⚠️ Importante**: 
+- Nunca commite o arquivo `.env` no Git
+- O arquivo `.env` já está incluído no `.gitignore`
+- Use uma API key válida do OpenAI com acesso ao modelo GPT-4o
 
 ## How can I edit this code?
 
