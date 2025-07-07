@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Camera as CameraIcon, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { v4 as uuidv4 } from "uuid";
 
 const CameraScreen = () => {
   const navigate = useNavigate();
@@ -27,8 +29,30 @@ const CameraScreen = () => {
       });
 
       if (image.base64String) {
-        // Store the image temporarily and navigate to results
-        sessionStorage.setItem("capturedImage", image.base64String);
+        // Converter base64 para Blob
+        const byteCharacters = atob(image.base64String);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+        // Gerar nome único para o arquivo
+        const fileName = `${uuidv4()}.jpg`;
+
+        // Upload para o Supabase Storage
+        const { error } = await supabase.storage.from("boxes").upload(fileName, blob, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+        if (error) {
+          throw new Error("Erro ao fazer upload da imagem: " + error.message);
+        }
+
+        // Salvar nome do arquivo e navegar
+        sessionStorage.setItem("uploadedFileName", fileName);
         navigate("/results");
       }
     } catch (error) {
@@ -44,26 +68,26 @@ const CameraScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-medical-bg flex flex-col">
-      {/* Header */}
-      <div className="p-4 bg-medical-surface border-b border-border">
+    <div className="h-screen bg-medical-bg flex flex-col overflow-hidden">
+      {/* Header - altura fixa */}
+      <div className="flex-shrink-0 p-3 bg-medical-surface border-b border-border">
         <Button
           variant="outline"
           onClick={handleEditPrompt}
           className="w-full"
-          size="lg"
+          size="sm"
         >
-          <Edit className="mr-2 h-5 w-5" />
+          <Edit className="mr-2 h-4 w-4" />
           Editar Prompt
         </Button>
       </div>
 
-      {/* Camera Area */}
-      <div className="flex-1 flex items-center justify-center p-4">
+      {/* Camera Area - ocupa o espaço restante */}
+      <div className="flex-1 flex items-center justify-center p-3 min-h-0">
         <Card className="w-full max-w-sm aspect-[3/4] bg-muted/20 border-2 border-dashed border-primary/30 flex items-center justify-center">
-          <div className="text-center">
-            <CameraIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center p-4">
+            <CameraIcon className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground leading-tight">
               Aponte a câmera para a{" "}
               <br />
               frente da caixa do medicamento
@@ -72,8 +96,8 @@ const CameraScreen = () => {
         </Card>
       </div>
 
-      {/* Bottom Action */}
-      <div className="p-6 bg-medical-surface border-t border-border">
+      {/* Bottom Action - altura fixa */}
+      <div className="flex-shrink-0 p-3 bg-medical-surface border-t border-border">
         <Button
           onClick={takePicture}
           disabled={isLoading}

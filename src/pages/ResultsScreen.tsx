@@ -5,7 +5,16 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera as CameraIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { analyzeMedicationImage, MedicationData } from "@/lib/openai";
+import { supabase } from "@/lib/supabase";
+
+interface MedicationData {
+  name: string;
+  activeIngredient: string;
+  dosage: string;
+  quantity: string;
+  laboratory: string;
+  stripe: string;
+}
 
 const ResultsScreen = () => {
   const navigate = useNavigate();
@@ -23,16 +32,51 @@ const ResultsScreen = () => {
       setIsLoading(true);
       setError(null);
 
-      const imageBase64 = sessionStorage.getItem("capturedImage");
-      const prompt = localStorage.getItem("medicationPrompt") || "";
+      const fileName = sessionStorage.getItem("uploadedFileName");
+      let prompt = localStorage.getItem("medicationPrompt") || "";
+      
+      // Se não há prompt salvo, salva o padrão
+      if (!prompt) {
+        const defaultPrompt = `Analyze this Brazilian medication box front image. Extract the following information:
 
-      if (!imageBase64) {
+NOME: [Product name exactly as shown]
+PRINCIPIO ATIVO: [Active ingredient]  
+DOSAGEM: [Dosage like 5mg, 10ml, etc.]
+QUANTIDADE: [Quantity number only, like 30]
+LABORATORIO: [Manufacturer name]
+TARJA: [TV, TP, VL, or blank if no stripe visible]
+
+Leave any field empty if the information is unclear or not visible. Return only the requested information in the exact format above.`;
+        
+        localStorage.setItem("medicationPrompt", defaultPrompt);
+        prompt = defaultPrompt;
+      }
+      
+      console.log("Debug - fileName:", fileName);
+      console.log("Debug - prompt:", prompt);
+      console.log("Debug - prompt length:", prompt.length);
+
+      if (!fileName) {
         throw new Error("No image found");
       }
 
-      // Chamada real para a API do OpenAI
-      const medicationData = await analyzeMedicationImage(imageBase64, prompt);
-      setMedicationData(medicationData);
+      // Chamada para a Edge Function do Supabase
+      const { data, error } = await supabase.functions.invoke('analyze-medication', {
+        body: {
+          fileName: fileName,
+          prompt: prompt
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data) {
+        throw new Error("No data returned from analysis");
+      }
+
+      setMedicationData(data);
     } catch (error) {
       console.error("Error analyzing image:", error);
       setError("Erro de análise. Tente novamente");
@@ -42,7 +86,7 @@ const ResultsScreen = () => {
   };
 
   const handleTryAgain = () => {
-    sessionStorage.removeItem("capturedImage");
+    sessionStorage.removeItem("uploadedFileName");
     navigate("/");
   };
 

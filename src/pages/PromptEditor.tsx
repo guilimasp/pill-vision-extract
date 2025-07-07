@@ -25,7 +25,13 @@ const PromptEditor = () => {
   useEffect(() => {
     // Load saved prompt or use default
     const savedPrompt = localStorage.getItem("medicationPrompt");
-    setPrompt(savedPrompt || DEFAULT_PROMPT);
+    if (savedPrompt) {
+      setPrompt(savedPrompt);
+    } else {
+      // Se não há prompt salvo, salva o padrão automaticamente
+      setPrompt(DEFAULT_PROMPT);
+      localStorage.setItem("medicationPrompt", DEFAULT_PROMPT);
+    }
   }, []);
 
   const handleSave = () => {
